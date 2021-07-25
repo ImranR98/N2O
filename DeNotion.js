@@ -3,44 +3,55 @@
 
 const fs = require('fs')
 
-const getNotionIds = (path) => {
+// Recursively removes Notion IDs from file names and returns the list of removed IDs
+const removeReturnIds = (path) => {
+    // First find files with identical names (these will remain with their IDs intact as removing the IDs would cause naming conflicts)
+    const filesHere = fs.readdirSync(path)
+    let dupeTestArray = filesHere.map(file => {
+        if (fs.statSync(`${path}/${file}`).isDirectory()) file = file.slice(0, -33)
+        else if (file.endsWith('.md')) file = file.slice(0, -36) + '.md'
+        else if (file.endsWith('.csv')) file = file.slice(0, -37) + '.csv'
+        return file
+    })
+    let dupes = []
+    dupeTestArray.forEach((file, index) => {
+        if (dupeTestArray.filter(f => f === file).length > 1) dupes.push(filesHere[index])
+    })
+    // Next, recursively go through each directory, renaming to remove all IDs that can be removed, and saving those IDs to an array
     let ids = []
-    fs.readdirSync(path).forEach(file => {
+    filesHere.forEach(file => {
+        const originalFile = file
+        file = originalFile.split('тАФ').join('—')
+        fs.renameSync(`${path}/${originalFile}`, `${path}/${file}`)
         if (fs.statSync(`${path}/${file}`).isDirectory()) {
-            ids.push(file.slice(-33))
-            ids = ids.concat(getNotionIds(`${path}/${file}`))
+            let newFile = file.slice(0, -33)
+            if (!dupes.includes(originalFile)) {
+                ids.push(file.slice(-33))
+                fs.renameSync(`${path}/${file}`, `${path}/${newFile}`)
+            } else newFile = file
+            removeReturnIds(`${path}/${newFile}`)
         } else if (file.toLowerCase().endsWith('.md')) {
-            ids.push(file.slice(-36).slice(0, -3))
+            if (!dupes.includes(originalFile)) {
+                const newFile = `${file.slice(0, -36)}.md`
+                ids.push(file.slice(-36).slice(0, -3))
+                fs.renameSync(`${path}/${file}`, `${path}/${newFile}`)
+            }
         } else if (file.toLowerCase().endsWith('.csv')) {
-            ids.push(file.slice(-37).slice(0, -4))
+            if (!dupes.includes(originalFile)) {
+                const newFile = `${file.slice(0, -37)}.csv`
+                ids.push(file.slice(-37).slice(0, -4))
+                fs.renameSync(`${path}/${file}`, `${path}/${newFile}`)
+            }
         }
     })
+    // Make sure the IDs are actually IDs (not a comprehensive check but should catch basic errors)
     ids.forEach(id => {
         if (!id.startsWith(' ') || id.length !== 33) throw 'One or more Notion IDs are invalid - this may not be an untouched Notion export'
     })
     return ids
 }
 
-const renameNotionFiles = (path) => {
-    fs.readdirSync(path).forEach(file => {
-        const originalFile = file
-        file = originalFile.split('тАФ').join('—')
-        fs.renameSync(`${path}/${originalFile}`, `${path}/${file}`)
-        if (fs.statSync(`${path}/${file}`).isDirectory()) {
-            const newFile = file.slice(0, -33)
-            fs.renameSync(`${path}/${file}`, `${path}/${newFile}`)
-            renameNotionFiles(`${path}/${newFile}`)
-        } else if (file.toLowerCase().endsWith('.md')) {
-            const newFile = `${file.slice(0, -36)}.md`
-            fs.renameSync(`${path}/${file}`, `${path}/${newFile}`)
-        } else if (file.toLowerCase().endsWith('.csv')) {
-            const newFile = `${file.slice(0, -37)}.csv`
-            fs.renameSync(`${path}/${file}`, `${path}/${newFile}`)
-        }
-        
-    })
-}
-
+// Takes a list of ID strings and removes any instances of those strings in links in the Markdown files 
 const replaceNotionLinks = (path, ids) => {
     const innerReplace = (path, ids) => {
         fs.readdirSync(path).forEach(file => {
@@ -53,7 +64,7 @@ const replaceNotionLinks = (path, ids) => {
             }
         })
     }
-    ids = ids.map(id => encodeURIComponent(id))
+    ids = ids.map(id => encodeURIComponent(id)) // They would be URL encoded in links from Notion
     innerReplace(path, ids)
 }
 
@@ -62,8 +73,7 @@ try {
     const path = process.argv[2]
     if (!fs.existsSync(path)) throw 'Path does not exist'
     if (!fs.statSync(path).isDirectory()) throw 'Path is not a directory'
-    const ids = getNotionIds(path)
-    renameNotionFiles(path)
+    const ids = removeReturnIds(path)
     replaceNotionLinks(path, ids)
 } catch (err) {
     console.error(err)

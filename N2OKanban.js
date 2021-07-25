@@ -25,7 +25,7 @@ try {
             const matchStrings = fs.readFileSync(`${path}/${file}`).toString()
                 .split('\n').filter(line => line.includes(`${groupString}: `))
                 .map(line => line.trim().slice(groupString.length + 2)).filter(line => line.length > 0)
-            if (matchStrings.length === 0) throw `Couldn't find the group string '${groupString}' in ${file}`
+            if (matchStrings.length === 0) matchStrings.push('* Unsorted *') // Some items may have been in the 'ungrouped' category
             parsedResults.groups.add(matchStrings[0])
             parsedResults.files.push({ file, group: matchStrings[0] })
         }
