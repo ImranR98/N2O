@@ -29,7 +29,7 @@ const removeReturnIds = (path) => {
                 ids.push(file.slice(-33))
                 fs.renameSync(`${path}/${file}`, `${path}/${newFile}`)
             } else newFile = file
-            removeReturnIds(`${path}/${newFile}`)
+            ids = ids.concat(removeReturnIds(`${path}/${newFile}`))
         } else if (file.toLowerCase().endsWith('.md')) {
             if (!dupes.includes(originalFile)) {
                 const newFile = `${file.slice(0, -36)}.md`
