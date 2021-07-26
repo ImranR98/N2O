@@ -11,7 +11,7 @@ After being burned by Notion one too many times, I've decided to switch to the l
 
 ## DeNotion
 - Removes the ID strings at the end of Notion file and directory names, and updates the internal links in all files to match.
-- Preserves traditional Markdown links `[]()`, unlike existing tools (including one recommended by Obsidian), which tend to convert links into the Obsidian style `[]`.
+- Preserves traditional Markdown links `[]()`, unlike existing tools (including one recommended by Obsidian), which tend to convert links into the Obsidian style `[[]]`.
 
 ## N2OKanban
 - Parses a Notion directory that is from a Kanban board and generates an Obsidian Kanban board file (for use with the Kanban community plugin).
