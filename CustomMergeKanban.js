@@ -48,7 +48,7 @@ try {
                 result += `---\n> ***No dates available for items beyond this point. Ordering may be random.***\n---\n\n\n\n`
             }
     })
-
+    console.log(`${parsedData.length} items saved to ${os.homedir()}/Downloads/${basename(path)}-compact.md.`)
     fs.writeFileSync(`${os.homedir()}/Downloads/${basename(path)}-compact.md`, result)
 } catch (err) {
     console.error(err)
